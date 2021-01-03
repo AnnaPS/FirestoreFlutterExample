@@ -1,14 +1,30 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter_firestore_example/presentation/pages/widgets/items_widget.dart';
+import 'package:flutter_firestore_example/presentation/utils/StringUtils.dart';
+import 'package:flutter_firestore_example/presentation/widgets/alert_dialog_widget.dart';
+import 'package:flutter_firestore_example/presentation/widgets/items_widget.dart';
 
-class MyHomePage extends StatelessWidget {
+class MyHomePage extends StatefulWidget {
+  @override
+  _MyHomePageState createState() => _MyHomePageState();
+}
+
+class _MyHomePageState extends State<MyHomePage> {
+  Map<String, dynamic> _data = Map<String, dynamic>();
+  CollectionReference gameNames =
+      FirebaseFirestore.instance.collection('gamenames');
+
+  void updateLocalData(Map<String, dynamic> data) {
+    setState(() {
+      _data = data;
+      _addGame(gameNames);
+    });
+  }
+
+  Map<String, dynamic> get data => _data;
+
   @override
   Widget build(BuildContext context) {
-    CollectionReference gameNames =
-        FirebaseFirestore.instance.collection('gamenames');
     return Scaffold(
       appBar: AppBar(
         title: Text('Games'),
@@ -27,14 +43,19 @@ class MyHomePage extends StatelessWidget {
                   : ListView(
                       children:
                           snapshot.data.docs.map((DocumentSnapshot document) {
-                        return ItemsWidget(document);
+                        return ItemsWidget(
+                          document: document,
+                          callback: () {
+                            // _updateData(document);
+                          },
+                        );
                       }).toList(),
                     );
         },
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          _addGame(gameNames);
+          _displayDialog(context, gameNames);
         },
         child: Icon(
           Icons.add,
@@ -42,29 +63,39 @@ class MyHomePage extends StatelessWidget {
       ),
     );
   }
+
+  void _displayDialog(BuildContext context, CollectionReference dataBaseName) {
+    showDialog(
+        context: context,
+        builder: (_) {
+          return AlertDialogWidget(
+            title: 'Add new game',
+            hintName: 'Game name',
+            hintRate: 'Game rate',
+            hintImage: 'Game url image',
+          );
+        }).then((val) {
+      updateLocalData(val);
+    });
+  }
+
+  Future<void> _addGame(CollectionReference dataBaseName) async {
+    if (data != null)
+      return await dataBaseName
+          .doc(StringUtils.randomString(20))
+          .set({'name': data['name'], 'rate': 6, 'image': data['image']})
+          .then((value) => print("Game Added"))
+          .catchError((error) => print("Failed to add game: $error"));
+  }
 }
 
 Stream<QuerySnapshot> _getAllDocuments(String dataBaseName) {
   return FirebaseFirestore.instance.collection(dataBaseName).snapshots();
 }
 
-Future<Transaction> _updateData(DocumentSnapshot document) {
+void _updateData(DocumentSnapshot document) {
   FirebaseFirestore.instance.runTransaction((transaction) async {
     DocumentSnapshot freshSnap = await transaction.get(document.reference);
-    await transaction
-        .update(freshSnap.reference, {'Rocket league': freshSnap['name']});
+    transaction.update(freshSnap.reference, {'name': 'Valorant'});
   });
-}
-
-Future<void> _addGame(CollectionReference dataBaseName) {
-  return dataBaseName
-      .doc(Random().toString())
-      .set({
-        'name': "Rocket league",
-        'rate': 5,
-        'image':
-            'https://assets.tonica.la/__export/1595441950093/sites/debate/img/2020/07/22/rocket-league-serx-free-to-play.jpg_759710130.jpg'
-      })
-      .then((value) => print("Game Added"))
-      .catchError((error) => print("Failed to add game: $error"));
 }
