@@ -83,7 +83,11 @@ class _MyHomePageState extends State<MyHomePage> {
     if (data != null)
       return await dataBaseName
           .doc(StringUtils.randomString(20))
-          .set({'name': data['name'], 'rate': 6, 'image': data['image']})
+          .set({
+            'name': data['name'],
+            'rate': int.parse(data['rate']),
+            'image': data['image']
+          })
           .then((value) => print("Game Added"))
           .catchError((error) => print("Failed to add game: $error"));
   }
