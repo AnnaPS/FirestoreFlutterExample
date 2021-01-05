@@ -36,7 +36,6 @@ class _AlertDialogWidgetState extends State<AlertDialogWidget> {
   @override
   Widget build(BuildContext context) {
     Map<String, dynamic> data = Map<String, dynamic>();
-    String name, image, rate;
 
     return AlertDialog(
       title: Text(widget.title),
@@ -45,24 +44,18 @@ class _AlertDialogWidgetState extends State<AlertDialogWidget> {
         child: Column(
           children: [
             TextField(
-              onChanged: (value) {
-                name = value;
-              },
+              onChanged: (value) {},
               controller: _textFiledNameController,
               decoration: InputDecoration(hintText: widget.hintName),
             ),
             TextField(
-              onChanged: (value) {
-                rate = value;
-              },
+              onChanged: (value) {},
               controller: _textFiledRateController,
               keyboardType: TextInputType.number,
               decoration: InputDecoration(hintText: widget.hintRate),
             ),
             TextField(
-              onChanged: (value) {
-                image = value;
-              },
+              onChanged: (value) {},
               controller: _textFieldImageController,
               decoration: InputDecoration(hintText: widget.hintImage),
             ),

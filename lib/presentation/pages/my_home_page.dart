@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_firestore_example/presentation/utils/StringUtils.dart';
 import 'package:flutter_firestore_example/presentation/widgets/alert_dialog_widget.dart';
+import 'package:flutter_firestore_example/presentation/widgets/custom_dialog_widget.dart';
 import 'package:flutter_firestore_example/presentation/widgets/items_widget.dart';
 
 class MyHomePage extends StatefulWidget {
@@ -11,17 +12,17 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   Map<String, dynamic> _data = Map<String, dynamic>();
+  Map<String, dynamic> get data => _data;
+
   CollectionReference gameNames =
       FirebaseFirestore.instance.collection('gamenames');
 
-  void updateLocalData(Map<String, dynamic> data) {
+  void addGameToDataBase(Map<String, dynamic> data) {
     setState(() {
       _data = data;
       _addGame(gameNames);
     });
   }
-
-  Map<String, dynamic> get data => _data;
 
   @override
   Widget build(BuildContext context) {
@@ -65,31 +66,39 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _displayDialog(BuildContext context, CollectionReference dataBaseName) {
-    showDialog(
+    showGeneralDialog(
+        barrierColor: Colors.black.withOpacity(0.5),
+        transitionDuration: Duration(milliseconds: 500),
         context: context,
-        builder: (_) {
-          return AlertDialogWidget(
+        pageBuilder: (BuildContext context, Animation<double> animation,
+            Animation<double> secondaryAnimation) {
+          return CustomDialogWidget(
             title: 'Add new game',
             hintName: 'Game name',
             hintRate: 'Game rate',
             hintImage: 'Game url image',
+            urlAvatar:
+                'https://cdn.dribbble.com/users/4841364/screenshots/10441264/media/848381e4990a0f79bfe491f3e8300f7b.jpg?compress=1&resize=1000x750',
           );
         }).then((val) {
-      updateLocalData(val);
+      addGameToDataBase(val);
     });
   }
 
-  Future<void> _addGame(CollectionReference dataBaseName) async {
+  void _addGame(CollectionReference dataBaseName) {
     if (data != null)
-      return await dataBaseName
-          .doc(StringUtils.randomString(20))
-          .set({
-            'name': data['name'],
-            'rate': int.parse(data['rate']),
-            'image': data['image']
-          })
-          .then((value) => print("Game Added"))
-          .catchError((error) => print("Failed to add game: $error"));
+      FirebaseFirestore.instance
+          .runTransaction((Transaction transaction) async {
+        return await dataBaseName
+            .doc(StringUtils.randomString(20))
+            .set({
+              'name': data['name'],
+              'rate': int.parse(data['rate']),
+              'image': data['image']
+            })
+            .then((value) => print("Game Added"))
+            .catchError((error) => print("Failed to add game: $error"));
+      });
   }
 }
 
